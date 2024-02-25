@@ -4,9 +4,10 @@ import { Route, Router, Routes } from 'react-router-dom';
 import { useEffect, useLayoutEffect, useState, Suspense, PropsWithChildren } from 'react';
 
 // local dependencies
+import Home from '@/pages/home/index.tsx';
+import Auth from '@/pages/auth/index.tsx';
 import history from '@/services/history.ts';
-import AppLayout from '@/pages/app/index.tsx';
-import AuthLayout from '@/pages/auth/index.tsx';
+// import AppLayout from '@/pages/app/index.tsx';
 import { useController } from './controller.ts';
 import { PageLoader } from '@/components/page-loader.tsx';
 import { Maintenance } from '@/components/maintenance.tsx';
@@ -23,11 +24,10 @@ export const Pages = () => {
     <ConnectedRouter history={history}>
       <Suspense fallback={<div>Loading</div>}>
         <Routes>
-          { /*<Route path={AUTH.RELATIVE_DEEP} element={<Auth />} />*/ }
+          <Route path="auth/*" element={<Auth />} />
           { /*<Route path={APP.RELATIVE_DEEP} element={<RequireAuth><App /></RequireAuth>} />*/ }
           { /*<Route path="/*" element={<Navigate to={APP.LINK()} />} />*/ }
-          <Route path="/" element={<AppLayout/>} />
-          <Route path="/auth" element={<AuthLayout/>} />
+          <Route path="/" element={<Home/>} />
         </Routes>
       </Suspense>
     </ConnectedRouter>

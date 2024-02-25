@@ -1,18 +1,19 @@
 // outsource dependencies
 import { memo } from 'react';
-import { Link } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
-// assets
-import logo from '@/assets/logo-icon.svg';
+// constants
 
-const AuthLayout = memo(() => {
+// local dependencies
+import SignUp from './sign-up/index.tsx';
 
-  return <div className="flex w-full h-full items-center justify-center min-h-screen">
-    auth
-    <Link to="/">
-      <img src={logo} alt="" width={300} height={300} className="animate-pulse"/>
-    </Link>
-  </div>;
+const Auth = memo(() => {
+  const location = useLocation();
+
+  return <Routes>
+    <Route path="register" element={<SignUp />} />
+    <Route path="/*" element={<Navigate to="register" state={{ from: location }} />} />
+  </Routes>;
 });
 
-export default AuthLayout;
+export default Auth;
