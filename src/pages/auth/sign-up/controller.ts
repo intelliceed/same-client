@@ -6,7 +6,6 @@ import { createSlice } from '@reduxjs/toolkit';
 import { takeEvery, put, fork, call } from 'redux-saga/effects';
 
 // local dependencies
-// import PUB from '@/services/api-public.ts';
 import PUB from '@/services/api-public.ts';
 import history from '@/services/history.ts';
 import getErrorMessage from '@/services/errors.ts';
@@ -105,8 +104,7 @@ function * submitSaga ({ payload }:{payload: SubmitPayload}) {
   try {
     yield call(PUB.post, '/auth/register', payload);
     yield call(toast.success, 'You have been successfully registered. You can login now.');
-    // TODO update ref to login
-    yield call(history.replace, '/');
+    yield call(history.replace, '/sign-in');
   } catch (error) {
     yield call(toast.error, getErrorMessage(error));
   }

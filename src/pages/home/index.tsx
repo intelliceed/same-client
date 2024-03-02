@@ -4,11 +4,13 @@ import { Link } from 'react-router-dom';
 import { LinkIcon, PhotoIcon, UserGroupIcon } from '@heroicons/react/24/outline';
 
 // local dependencies
+import { useSelf } from '@/pages/controller.ts';
 
 // assets
 import logo from '@/assets/logo-icon.svg';
 
 const Home = memo(() => {
+  const self = useSelf();
 
   return <main className="bg-gray-100 min-h-screen flex flex-col">
     <nav className="bg-blue-300/90 p-4">
@@ -17,17 +19,15 @@ const Home = memo(() => {
           <img src={logo} alt="samefame" width="30" height="30" className=""/>
           <h1 className="text-xl font-semibold text-tertiary">SameFame</h1>
         </div>
-        <Link to="/auth/register" className="btn text-secondary transition-all font-semibold rounded border-secondary hover:bg-secondary/10 border-2 active:bg-secondary/20 text-base">Login</Link>
+        <Link to="/auth/login" className="btn text-secondary transition-all font-semibold rounded border-secondary hover:bg-secondary/10 border-2 active:bg-secondary/20 text-base">Login</Link>
       </div>
     </nav>
 
     <section className="py-16">
       <div className="container mx-auto text-center">
         <h2 className="text-4xl font-bold mb-4">Connect with the World</h2>
-        <p className="text-lg text-gray-700 mb-8">Join SameFame and discover new friends, share your moments, and
-          stay connected.</p>
-        <a href="#" className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-6 rounded-full text-lg font-semibold">Get
-          Started</a>
+        <p className="text-lg text-gray-700 mb-8">Join SameFame and discover new friends, share your moments, and stay connected.</p>
+        <Link to={!self ? '/auth/login' : '/app'} className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-6 rounded-full text-lg font-semibold">Get Started</Link>
       </div>
     </section>
 

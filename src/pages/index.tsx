@@ -1,13 +1,14 @@
 // outsource dependencies
 import { BrowserHistory } from 'history';
-import { Route, Router, Routes } from 'react-router-dom';
+import { Navigate, Route, Router, Routes, useLocation } from 'react-router-dom';
 import { useEffect, useLayoutEffect, useState, Suspense, PropsWithChildren } from 'react';
 
 // local dependencies
+import App from '@/pages/app/index.tsx';
 import Home from '@/pages/home/index.tsx';
 import Auth from '@/pages/auth/index.tsx';
 import history from '@/services/history.ts';
-// import AppLayout from '@/pages/app/index.tsx';
+import AuthService from '@/services/auth.ts';
 import { useController } from './controller.ts';
 import { PageLoader } from '@/components/page-loader.tsx';
 import { Maintenance } from '@/components/maintenance.tsx';
@@ -25,6 +26,7 @@ export const Pages = () => {
       <Suspense fallback={<div>Loading</div>}>
         <Routes>
           <Route path="auth/*" element={<Auth />} />
+          <Route path="app/*" element={<RequireAuth><App /></RequireAuth>} />
           { /*<Route path={APP.RELATIVE_DEEP} element={<RequireAuth><App /></RequireAuth>} />*/ }
           { /*<Route path="/*" element={<Navigate to={APP.LINK()} />} />*/ }
           <Route path="/" element={<Home/>} />
@@ -60,10 +62,10 @@ const ConnectedRouter = ({ history, basename, children }:ConnectedRouterProps) =
   </Router>;
 };
 
-// function RequireAuth ({ children }:PropsWithChildren) {
-//   const location = useLocation();
-//
-//   if (!AuthService.isTokenExist()) { return <Navigate to={SIGN_IN.LINK()} state={{ from: location }} replace />; }
-//
-//   return children;
-// }
+function RequireAuth ({ children }:PropsWithChildren) {
+  const location = useLocation();
+
+  if (!AuthService.isTokenExist()) { return <Navigate to="/auth/login" state={{ from: location }} replace />; }
+
+  return children;
+}

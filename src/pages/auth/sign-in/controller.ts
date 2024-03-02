@@ -1,59 +1,63 @@
 // outsource dependencies
 import { useCallback } from 'react';
+import toast from 'react-hot-toast';
 import { useDispatch } from 'react-redux';
-import { combineReducers, createSlice } from '@reduxjs/toolkit';
+import { createSlice } from '@reduxjs/toolkit';
 import { takeEvery, put, fork, call } from 'redux-saga/effects';
 
 // local dependencies
 import PUB from '@/services/api-public.ts';
-import authReducer, { authSubscriber } from './auth/controller.ts';
+import history from '@/services/history.ts';
+import getErrorMessage from '@/services/errors.ts';
+import { API_NAMES } from '@/services/api-helpers.ts';
+import { setupSession } from '@/services/api-private.ts';
 import { AppState, useAppSelector } from '@/services/store-helpers.ts';
 
 // configure
 export interface State {
-  health: boolean,
   disabled: boolean,
-  self: object | null,
   error: string | null,
   initialized: boolean,
 }
 
 const initialState: State = {
-  self: null,
   error: null,
-  health: true,
   disabled: false,
   initialized: false,
 };
 
+export type SubmitPayload = {
+  email: string,
+  password: string,
+}
+
 const slice = createSlice({
-  name: 'root',
+  name: 'auth/sign-in',
   initialState,
   reducers: {
+    /* eslint-disable @typescript-eslint/no-unused-vars */
     initialize () {},
     clear: () => initialState,
+    submit (_state, _action: {type: string, payload:SubmitPayload}) {},
     update: (state, action:{type: string, payload:Partial<State>}) => ({
       ...state,
       ...action.payload
     }),
+    /* eslint-enable no-alert, no-console */
   },
 });
 
-export const { initialize, clear, update } = slice.actions;
+export default slice;
 
-const reducer = combineReducers({
-  main: slice.reducer,
-  auth: authReducer,
-});
+export const { initialize, clear, update, submit } = slice.actions;
 
-export default reducer;
-
-export const selector = (state:AppState):State => state.root.main;
+export const selector = (state:AppState):State => state.root.auth[slice.name];
 
 interface ControllerActions {
   clear: () => void,
   initialize: () => void,
   update: (state:Partial<State>) => void,
+  submit: (payload:SubmitPayload) => void,
 }
 
 export const useControllerActions = ():ControllerActions => {
@@ -61,10 +65,12 @@ export const useControllerActions = ():ControllerActions => {
   const clearCtrl = useCallback(() => dispatch(clear()), [dispatch]);
   const initializeCtrl = useCallback(() => dispatch(initialize()), [dispatch]);
   const updateCtrl = useCallback((payload:Partial<State>) => dispatch(update(payload)), [dispatch]);
+  const handleSubmit = useCallback((payload:SubmitPayload) => dispatch(submit(payload)), [dispatch]);
 
   return {
     clear: clearCtrl,
     update: updateCtrl,
+    submit: handleSubmit,
     initialize: initializeCtrl,
   };
 };
@@ -78,35 +84,27 @@ export const useController = ():[State, ControllerActions] => {
   return [state, actions];
 };
 
-export const useSelf = () => useControllerState().self;
-
-export function * rootSubscriber () {
-  yield fork(rootSagaWatcher);
-  yield fork(authSubscriber);
+export function * subscriber () {
+  yield fork(sagaWatcher);
 }
 
-export function * rootSagaWatcher () {
+export function * sagaWatcher () {
   yield takeEvery(initialize.type, initializeSaga);
-  // yield takeEvery(logout.type, logoutSaga);
+  yield takeEvery(submit.type, action => submitSaga(action as unknown as {type: string, payload:SubmitPayload}));
 }
 
 function * initializeSaga () {
+  yield put(update({ initialized: true, }));
+}
+
+function * submitSaga ({ payload }:{payload: SubmitPayload}) {
+  yield put(update({ disabled: true, }));
   try {
-    yield call(PUB.get, '/health');
+    const data:{accessToken: string, refreshToken: string} = yield call(PUB.post, '/auth/login', payload);
+    yield call(setupSession, { [API_NAMES.ACCESS_TOKEN]: data?.accessToken, [API_NAMES.REFRESH_TOKEN]: data?.refreshToken });
+    yield call(history.replace, '/app');
   } catch (error) {
-    yield put(update({ health: false, initialized: true }));
-    return;
+    yield call(toast.error, getErrorMessage(error));
   }
-  // const hasSession = yield call(restoreSessionFromStore);
-  // if (hasSession) {
-  //   yield call(history.replace, APP.REGEXP.test(history.location.pathname)
-  //     ? history.location
-  //     : APP.LINK());
-  // }
-  // yield call(registerLocale, 'en', en);
-  // yield call(registerLocale, 'de', de);
-  yield put(update({
-    health: true,
-    initialized: true,
-  }));
+  yield put(update({ disabled: false, }));
 }
