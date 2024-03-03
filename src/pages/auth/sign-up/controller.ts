@@ -104,7 +104,7 @@ function * submitSaga ({ payload }:{payload: SubmitPayload}) {
   try {
     yield call(PUB.post, '/auth/register', payload);
     yield call(toast.success, 'You have been successfully registered. You can login now.');
-    yield call(history.replace, '/sign-in');
+    yield call(history.replace, '/auth/login');
   } catch (error) {
     yield call(toast.error, getErrorMessage(error));
   }
