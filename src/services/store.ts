@@ -4,7 +4,8 @@ import { configureStore, combineReducers, type Store } from '@reduxjs/toolkit';
 
 // local dependencies
 import sagaWatcher from './root-saga.ts';
-import rootReducer from '@/pages/controller.ts';
+import { onAuthFail } from '@/services/api-private.ts';
+import rootReducer, { logout } from '@/pages/controller.ts';
 
 export interface SagaStore extends Store {
   sagaTask: Task;
@@ -38,7 +39,7 @@ export const makeStore = () => {
   (store as SagaStore).sagaTask = sagaMiddleware.run(sagaWatcher);
 
   // 4: Add auth fail action
-  // onAuthFail(error => store.dispatch(sessionExpiredLogout()));
+  onAuthFail(() => store.dispatch(logout()));
 
   // 5: now return the store
   return store as SagaStore;

@@ -14,22 +14,22 @@ import signUpImage from '@/assets/sign-up.png';
 
 // configure
 const initialValues = {
-  email: '',
   password: '',
+  confirmPassword: '',
 };
 
-const SignUp = memo(() => {
+const ResetPassword = memo(() => {
   const [, { submit }] = useController();
 
   const validationSchema = useMemo(() => yup.object().shape({
-    email: yup.string()
-      .nullable()
-      .email('Invalid email')
-      .required('Something is missing'),
     password: yup.string()
       .nullable()
       .required('Something is missing')
       .min(8, '${min} characters is minimum'),
+    confirmPassword: yup.string()
+      .nullable()
+      .required('Something is missing')
+      .oneOf([yup.ref('password')], 'Passwords must match'),
   }), []);
 
   const handleSubmit = useCallback((values:SubmitPayload) => submit(values), [submit]);
@@ -42,13 +42,13 @@ const SignUp = memo(() => {
         </Link>
         <div className="flex flex-col flex-grow justify-center items-center py-10">
           <div className="w-full xl:w-[58%]">
-            <h1 className="text-2xl font-semibold mb-10">Login</h1>
+            <h1 className="text-2xl font-semibold mb-10">Reset password</h1>
             <Formik
               onSubmit={handleSubmit}
               initialValues={initialValues}
               validationSchema={validationSchema}
             >
-              <SignInForm/>
+              <ResetPasswordForm/>
             </Formik>
           </div>
         </div>
@@ -60,26 +60,34 @@ const SignUp = memo(() => {
   </div>;
 });
 
-export default SignUp;
+export default ResetPassword;
 
-const SignInForm = memo(() => {
+const ResetPasswordForm = memo(() => {
   const { disabled } = useControllerState();
 
   return <Form>
-    <FInput name="email" type="email" label="Email" disabled={disabled} classNameLabel="text-sm font-medium" classNameFormGroup="mb-6" placeholder="example@example.com"/>
     <FInput
       name="password"
       type="password"
       label="Password"
       disabled={disabled}
       placeholder="********"
-      classNameFormGroup="mb-6"
+      classNameFormGroup="mb-3"
+      classNameLabel="text-sm font-medium"
+    />
+    <FInput
+      type="password"
+      disabled={disabled}
+      name="confirmPassword"
+      placeholder="********"
+      label="Confirm password"
+      classNameFormGroup="mb-3"
       classNameLabel="text-sm font-medium"
     />
     <div className="flex justify-between md:gap-x-2 max-md:gap-y-4 max-md:flex-col md:items-start">
-      <p className="max-md:order-2">Haven&apos;t created an account yet? <Link to="/auth/register" className="text-blue-600 transition hover:text-blue-600/70 active:text-blue-600">register</Link></p>
-      <button disabled={disabled} type="submit" className="btn-primary max-md:order-1">Login</button>
+      <p className="max-md:order-2">Create new password for you account</p>
+      <button disabled={disabled} type="submit" className="btn-primary max-md:order-1">Send</button>
     </div>
-    <p className="max-md:order-2"><Link to="/auth/forgot-password" className="text-blue-600 transition hover:text-blue-600/70 active:text-blue-600">Forgot your password?</Link></p>
   </Form>;
 });
+

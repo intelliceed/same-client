@@ -6,6 +6,10 @@ import { takeEvery, put, fork, call } from 'redux-saga/effects';
 
 // local dependencies
 import PUB from '@/services/api-public.ts';
+import AuthService from '@/services/auth.ts';
+import getErrorMessage from '@/services/errors.ts';
+import { API_NAMES } from '@/services/api-helpers.ts';
+import API, { setupSession } from '@/services/api-private.ts';
 import authReducer, { authSubscriber } from './auth/controller.ts';
 import { AppState, useAppSelector } from '@/services/store-helpers.ts';
 
@@ -30,6 +34,7 @@ const slice = createSlice({
   name: 'root',
   initialState,
   reducers: {
+    logout () {},
     initialize () {},
     clear: () => initialState,
     update: (state, action:{type: string, payload:Partial<State>}) => ({
@@ -39,7 +44,7 @@ const slice = createSlice({
   },
 });
 
-export const { initialize, clear, update } = slice.actions;
+export const { initialize, clear, update, logout } = slice.actions;
 
 const reducer = combineReducers({
   main: slice.reducer,
@@ -52,6 +57,7 @@ export const selector = (state:AppState):State => state.root.main;
 
 interface ControllerActions {
   clear: () => void,
+  logout: () => void,
   initialize: () => void,
   update: (state:Partial<State>) => void,
 }
@@ -59,12 +65,14 @@ interface ControllerActions {
 export const useControllerActions = ():ControllerActions => {
   const dispatch = useDispatch();
   const clearCtrl = useCallback(() => dispatch(clear()), [dispatch]);
+  const handleLogout = useCallback(() => dispatch(logout()), [dispatch]);
   const initializeCtrl = useCallback(() => dispatch(initialize()), [dispatch]);
   const updateCtrl = useCallback((payload:Partial<State>) => dispatch(update(payload)), [dispatch]);
 
   return {
     clear: clearCtrl,
     update: updateCtrl,
+    logout: handleLogout,
     initialize: initializeCtrl,
   };
 };
@@ -87,7 +95,7 @@ export function * rootSubscriber () {
 
 export function * rootSagaWatcher () {
   yield takeEvery(initialize.type, initializeSaga);
-  // yield takeEvery(logout.type, logoutSaga);
+  yield takeEvery(logout.type, logoutSaga);
 }
 
 function * initializeSaga () {
@@ -109,4 +117,15 @@ function * initializeSaga () {
     health: true,
     initialized: true,
   }));
+}
+
+function * logoutSaga () {
+  try {
+    const { [API_NAMES.REFRESH_TOKEN]: refreshToken } = yield call(AuthService.getToken);
+    yield call(API.post, '/auth/logout', { refreshToken });
+  } catch (error) {
+    console.info(getErrorMessage(error));
+  }
+  yield call(setupSession, null);
+  yield put(update({ self: null, }));
 }

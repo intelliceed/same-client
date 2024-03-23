@@ -63,8 +63,8 @@ API.interceptors.response.use(
 type StuckRequest = {
   error: AxiosError;
   resolve: (value: unknown) => void;
-  reject: (reason?: AxiosError) => void;
   config: InternalAxiosRequestConfig | undefined;
+  reject: (reason?: { errorCode: string; message: string }) => void;
 }
 
 let isRefreshing = false;
@@ -109,7 +109,14 @@ const handleRefreshSession = async (error:AxiosError) => {
       isRefreshing = false;
     } catch (e) {
       // NOTE reject all
-      stuckRequests.map(({ error, reject }) => reject(error));
+      stuckRequests.map(({ error, reject }) => {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        const message = ((error?.response?.data?.message) || 'Something went wrong ...');
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        reject({ errorCode: error?.response?.data?.errorCode, message });
+      });
       // NOTE provide ability to handle this situation
       onAuthFailApplicationAction(error);
       // NOTE start new stuck

@@ -5,23 +5,11 @@ import { memo, useCallback } from 'react';
 // assets
 import logo from '@/assets/logo-icon.svg';
 import API from '@/services/api-private.ts';
-import AuthService from '@/services/auth.ts';
 import getErrorMessage from '@/services/errors.ts';
-import { API_NAMES } from '@/services/api-helpers.ts';
 import { useControllerActions } from '@/pages/controller.ts';
 
 const AppLayout = memo(() => {
-  const { update } = useControllerActions();
-
-  const logout = useCallback(async () => {
-    try {
-      API.post('/auth/logout', { refreshToken: AuthService.getToken()?.[API_NAMES.REFRESH_TOKEN] || null });
-    } catch (error) {
-      console.info(error);
-    }
-    update({ self: null });
-    AuthService.removeToken();
-  }, [update]);
+  const { logout } = useControllerActions();
 
   const handleGetSelf = useCallback(async () => {
     try {
