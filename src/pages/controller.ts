@@ -9,15 +9,27 @@ import PUB from '@/services/api-public.ts';
 import AuthService from '@/services/auth.ts';
 import getErrorMessage from '@/services/errors.ts';
 import { API_NAMES } from '@/services/api-helpers.ts';
-import API, { setupSession } from '@/services/api-private.ts';
 import authReducer, { authSubscriber } from './auth/controller.ts';
 import { AppState, useAppSelector } from '@/services/store-helpers.ts';
+import API, { restoreSessionFromStore, setupSession } from '@/services/api-private.ts';
 
 // configure
+type Self = {
+  email: string,
+  lastName: string,
+  firstName: string,
+  friends: [] | null,
+  location?: string | null,
+  occupation?: string | null,
+  picturePath?: string | null,
+  impressions?: number | null,
+  viewedProfile?: number | null,
+}
+
 export interface State {
   health: boolean,
   disabled: boolean,
-  self: object | null,
+  self: Self | null,
   error: string | null,
   initialized: boolean,
 }
@@ -105,14 +117,8 @@ function * initializeSaga () {
     yield put(update({ health: false, initialized: true }));
     return;
   }
-  // const hasSession = yield call(restoreSessionFromStore);
-  // if (hasSession) {
-  //   yield call(history.replace, APP.REGEXP.test(history.location.pathname)
-  //     ? history.location
-  //     : APP.LINK());
-  // }
-  // yield call(registerLocale, 'en', en);
-  // yield call(registerLocale, 'de', de);
+  const hasSession:boolean = yield call(restoreSessionFromStore);
+  if (hasSession) { yield call(getSelfSaga); }
   yield put(update({
     health: true,
     initialized: true,
@@ -128,4 +134,13 @@ function * logoutSaga () {
   }
   yield call(setupSession, null);
   yield put(update({ self: null, }));
+}
+
+function * getSelfSaga () {
+  try {
+    const data: Self = yield call(API.get, '/auth/me',);
+    yield put(update({ self: data, }));
+  } catch (error) {
+    console.info(getErrorMessage(error));
+  }
 }
