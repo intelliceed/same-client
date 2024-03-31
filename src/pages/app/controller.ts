@@ -1,18 +1,15 @@
 // outsource dependencies
 import { useCallback } from 'react';
-import toast from 'react-hot-toast';
 import { useDispatch } from 'react-redux';
-import { createSlice } from '@reduxjs/toolkit';
-import { takeEvery, put, fork, call } from 'redux-saga/effects';
+import { takeEvery, put, fork, } from 'redux-saga/effects';
+import { combineReducers, createSlice } from '@reduxjs/toolkit';
 
 // local dependencies
-import PUB from '@/services/api-public.ts';
-import history from '@/services/history.ts';
+// import API from '@/services/api-private.ts';
 import getErrorMessage from '@/services/errors.ts';
-import { getSelfSaga } from '@/pages/controller.ts';
-import { API_NAMES } from '@/services/api-helpers.ts';
-import { setupSession } from '@/services/api-private.ts';
 import { AppState, useAppSelector } from '@/services/store-helpers.ts';
+import usersSlice, { subscriber as usersSubscriber } from './users/controller.ts';
+import usersViewSlice, { subscriber as usersViewSubscriber } from './users/view/controller.ts';
 
 // configure
 export interface State {
@@ -27,38 +24,35 @@ const initialState: State = {
   initialized: false,
 };
 
-export type SubmitPayload = {
-  email: string,
-  password: string,
-}
-
 const slice = createSlice({
-  name: 'auth/sign-in',
+  name: 'app/main',
   initialState,
   reducers: {
-    /* eslint-disable @typescript-eslint/no-unused-vars */
     initialize () {},
     clear: () => initialState,
-    submit (_state, _action: {type: string, payload:SubmitPayload}) {},
     update: (state, action:{type: string, payload:Partial<State>}) => ({
       ...state,
       ...action.payload
     }),
-    /* eslint-enable no-alert, no-console */
   },
 });
 
-export default slice;
+export const { initialize, clear, update, } = slice.actions;
 
-export const { initialize, clear, update, submit } = slice.actions;
+const reducer = combineReducers({
+  main: slice.reducer,
+  [usersSlice.name]: usersSlice.reducer,
+  [usersViewSlice.name]: usersViewSlice.reducer
+});
 
-export const selector = (state:AppState):State => state.root.auth[slice.name];
+export default reducer;
+
+export const selector = (state:AppState):State => state.root.main;
 
 interface ControllerActions {
   clear: () => void,
   initialize: () => void,
   update: (state:Partial<State>) => void,
-  submit: (payload:SubmitPayload) => void,
 }
 
 export const useControllerActions = ():ControllerActions => {
@@ -66,12 +60,10 @@ export const useControllerActions = ():ControllerActions => {
   const clearCtrl = useCallback(() => dispatch(clear()), [dispatch]);
   const initializeCtrl = useCallback(() => dispatch(initialize()), [dispatch]);
   const updateCtrl = useCallback((payload:Partial<State>) => dispatch(update(payload)), [dispatch]);
-  const handleSubmit = useCallback((payload:SubmitPayload) => dispatch(submit(payload)), [dispatch]);
 
   return {
     clear: clearCtrl,
     update: updateCtrl,
-    submit: handleSubmit,
     initialize: initializeCtrl,
   };
 };
@@ -85,28 +77,23 @@ export const useController = ():[State, ControllerActions] => {
   return [state, actions];
 };
 
+
 export function * subscriber () {
   yield fork(sagaWatcher);
+  yield fork(usersSubscriber);
+  yield fork(usersViewSubscriber);
 }
 
 export function * sagaWatcher () {
   yield takeEvery(initialize.type, initializeSaga);
-  yield takeEvery(submit.type, action => submitSaga(action as unknown as {type: string, payload:SubmitPayload}));
 }
 
 function * initializeSaga () {
-  yield put(update({ initialized: true, }));
-}
-
-function * submitSaga ({ payload }:{payload: SubmitPayload}) {
-  yield put(update({ disabled: true, }));
   try {
-    const data:{accessToken: string, refreshToken: string} = yield call(PUB.post, '/auth/login', payload);
-    yield call(setupSession, { [API_NAMES.ACCESS_TOKEN]: data?.accessToken, [API_NAMES.REFRESH_TOKEN]: data?.refreshToken });
-    yield call(getSelfSaga);
-    yield call(history.replace, '/app');
+    // const { data } = yield call(API.get, '/users');
   } catch (error) {
-    yield call(toast.error, getErrorMessage(error));
+    yield put(update({ error: getErrorMessage(error), initialized: true }));
+    return;
   }
-  yield put(update({ disabled: false, }));
+  yield put(update({ initialized: true, }));
 }

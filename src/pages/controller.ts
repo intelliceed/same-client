@@ -11,19 +11,24 @@ import getErrorMessage from '@/services/errors.ts';
 import { API_NAMES } from '@/services/api-helpers.ts';
 import authReducer, { authSubscriber } from './auth/controller.ts';
 import { AppState, useAppSelector } from '@/services/store-helpers.ts';
+import appReducer, { subscriber as appSubscriber } from './app/controller.ts';
 import API, { restoreSessionFromStore, setupSession } from '@/services/api-private.ts';
 
 // configure
-type Self = {
-  email: string,
-  lastName: string,
-  firstName: string,
-  friends: [] | null,
-  location?: string | null,
-  occupation?: string | null,
-  picturePath?: string | null,
-  impressions?: number | null,
-  viewedProfile?: number | null,
+interface User {
+  _id: string;
+  lastName: string;
+  firstName: string;
+  location?: string | null;
+  occupation?: string | null;
+  picturePath?: string | null;
+  impressions?: number | null;
+  viewedProfile?: number | null;
+}
+
+export interface Self extends User {
+  email: string;
+  subscriptions: Array<User> | null;
 }
 
 export interface State {
@@ -47,6 +52,7 @@ const slice = createSlice({
   initialState,
   reducers: {
     logout () {},
+    getSelf () {},
     initialize () {},
     clear: () => initialState,
     update: (state, action:{type: string, payload:Partial<State>}) => ({
@@ -56,11 +62,12 @@ const slice = createSlice({
   },
 });
 
-export const { initialize, clear, update, logout } = slice.actions;
+export const { initialize, clear, update, logout, getSelf } = slice.actions;
 
 const reducer = combineReducers({
   main: slice.reducer,
   auth: authReducer,
+  app: appReducer,
 });
 
 export default reducer;
@@ -70,6 +77,7 @@ export const selector = (state:AppState):State => state.root.main;
 interface ControllerActions {
   clear: () => void,
   logout: () => void,
+  getSelf: () => void,
   initialize: () => void,
   update: (state:Partial<State>) => void,
 }
@@ -78,6 +86,7 @@ export const useControllerActions = ():ControllerActions => {
   const dispatch = useDispatch();
   const clearCtrl = useCallback(() => dispatch(clear()), [dispatch]);
   const handleLogout = useCallback(() => dispatch(logout()), [dispatch]);
+  const handleGetSelf = useCallback(() => dispatch(getSelf()), [dispatch]);
   const initializeCtrl = useCallback(() => dispatch(initialize()), [dispatch]);
   const updateCtrl = useCallback((payload:Partial<State>) => dispatch(update(payload)), [dispatch]);
 
@@ -85,6 +94,7 @@ export const useControllerActions = ():ControllerActions => {
     clear: clearCtrl,
     update: updateCtrl,
     logout: handleLogout,
+    getSelf: handleGetSelf,
     initialize: initializeCtrl,
   };
 };
@@ -103,10 +113,12 @@ export const useSelf = () => useControllerState().self;
 export function * rootSubscriber () {
   yield fork(rootSagaWatcher);
   yield fork(authSubscriber);
+  yield fork(appSubscriber);
 }
 
 export function * rootSagaWatcher () {
   yield takeEvery(initialize.type, initializeSaga);
+  yield takeEvery(getSelf.type, getSelfSaga);
   yield takeEvery(logout.type, logoutSaga);
 }
 
@@ -136,7 +148,7 @@ function * logoutSaga () {
   yield put(update({ self: null, }));
 }
 
-function * getSelfSaga () {
+export function * getSelfSaga () {
   try {
     const data: Self = yield call(API.get, '/auth/me',);
     yield put(update({ self: data, }));
