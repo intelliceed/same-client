@@ -1,4 +1,5 @@
 // outsource dependencies
+import { format } from 'date-fns';
 // import toast from 'react-hot-toast';
 import { memo, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
@@ -7,15 +8,15 @@ import { BriefcaseIcon, CursorArrowRaysIcon, EyeIcon, MapPinIcon } from '@heroic
 
 // local dependencies
 import { useController } from './controller.ts';
+import { Spinner } from '@/components/spinner.tsx';
 import { PageLoader } from '@/components/page-loader.tsx';
 
 // assets
 import userImage from '@/assets/user.png';
-import { Spinner } from '@/components/spinner.tsx';
 
 const UsersLayout = memo(() => {
   const { id } = useParams();
-  const [{ initialized, data, disabled }, { initialize, toggleFollow, clear }] = useController();
+  const [{ initialized, data, disabled, postsList }, { initialize, toggleFollow, clear }] = useController();
 
   useEffect(() => {
     initialize({ id: id || '' }); return clear;
@@ -25,7 +26,7 @@ const UsersLayout = memo(() => {
 
   return <>
     <main className="w-full min-h-screen bg-gray-100">
-      <div className="container mx-auto flex w-full min-h-screen flex-col pt-[64px] bg-gray-100">
+      <div className="container mx-auto flex w-full min-h-screen flex-col pt-[80px] bg-gray-100">
         <div className="pt-6 mb-2">
           <Link to="/app" className="flex items-center min-w-max ml-auto p-1 text-main hover:text-main/70 transition gap-x-1">
             <ArrowLeftIcon className="w-4 h-4"/>
@@ -33,49 +34,61 @@ const UsersLayout = memo(() => {
           </Link>
         </div>
         <div className="grid grid-cols-12 gap-x-6">
-          <div className="col-span-3 p-4 bg-white rounded-lg shadow">
-            <div className="flex gap-x-2 items-start mb-3">
-              <img src={data?.picturePath || userImage} alt="user avatar" width="48" height="48" className="rounded-full object-cover"/>
-              <div className="flex min-w-0 mt-1 items-center gap-x-3 justify-between grow">
-                <h2 className="font-semibold truncate min-w-0">{ data?.firstName || '' } { data?.lastName || '' }</h2>
+          <div className="col-span-3 ">
+            <div className="p-4 bg-white rounded-lg shadow sticky top-[104px]">
+              <div className="flex gap-x-2 items-start mb-3">
+                <img src={data?.picturePath || userImage} alt="user avatar" width="48" height="48" className="rounded-full object-cover"/>
+                <div className="flex min-w-0 mt-1 items-center gap-x-3 justify-between grow">
+                  <h2 className="font-semibold truncate min-w-0">{ data?.firstName || '' } { data?.lastName || '' }</h2>
+                </div>
               </div>
-            </div>
-            <hr className="mb-3"/>
-            <div className="flex items-center text-sm gap-x-3 mb-3">
-              <div>
-                <MapPinIcon className="w-5 h-5"/>
+              <hr className="mb-3"/>
+              <div className="flex items-center text-sm gap-x-3 mb-3">
+                <div>
+                  <MapPinIcon className="w-5 h-5"/>
+                </div>
+                <h3 className="break-words">{ data?.location || 'Location not specified' }</h3>
               </div>
-              <h3 className="break-words">{ data?.location || 'Location not specified' }</h3>
-            </div>
-            <div className="flex items-center text-sm gap-x-3 mb-2">
-              <div>
-                <BriefcaseIcon className="w-5 h-5"/>
+              <div className="flex items-center text-sm gap-x-3 mb-2">
+                <div>
+                  <BriefcaseIcon className="w-5 h-5"/>
+                </div>
+                <h3 className="break-words">{ data?.occupation || 'Occupation not specified' }</h3>
               </div>
-              <h3 className="break-words">{ data?.occupation || 'Occupation not specified' }</h3>
-            </div>
-            <hr className="mb-3"/>
-            <div className="flex items-center text-sm gap-x-3 mb-3">
-              <div>
-                <EyeIcon className="w-5 h-5"/>
+              <hr className="mb-3"/>
+              <div className="flex items-center text-sm gap-x-3 mb-3">
+                <div>
+                  <EyeIcon className="w-5 h-5"/>
+                </div>
+                <div className="flex items-center min-w-0 justify-between grow">
+                  <h3 className="truncate min-w-0">Profile views</h3>
+                  <p className="font-medium">{ data?.viewedProfile || 0 }</p>
+                </div>
               </div>
-              <div className="flex items-center min-w-0 justify-between grow">
-                <h3 className="truncate min-w-0">Profile views</h3>
-                <p className="font-medium">{ data?.viewedProfile || 0 }</p>
-              </div>
-            </div>
-            <div className="flex items-center text-sm gap-x-3 mb-3">
-              <div>
-                <CursorArrowRaysIcon className="w-5 h-5"/>
-              </div>
-              <div className="flex items-center min-w-0 justify-between grow">
-                <h3 className="truncate min-w-0">Profile impressions</h3>
-                <p className="font-medium">{ data?.impressions || 0 }</p>
+              <div className="flex items-center text-sm gap-x-3 mb-3">
+                <div>
+                  <CursorArrowRaysIcon className="w-5 h-5"/>
+                </div>
+                <div className="flex items-center min-w-0 justify-between grow">
+                  <h3 className="truncate min-w-0">Profile impressions</h3>
+                  <p className="font-medium">{ data?.impressions || 0 }</p>
+                </div>
               </div>
             </div>
 
 
           </div>
-          <div className="col-span-6 p-4 bg-white rounded-lg shadow">
+          <div className="col-span-6">
+            { !postsList.length ? <div className="p-4 bg-white rounded-lg shadow mb-4"><p className="font-medium">There are no posts. The user can post only for subscribers, so try to follow</p></div> : postsList.map(item => <div key={item._id} className="p-4 bg-white rounded-lg shadow mb-4">
+              <div className="flex gap-x-2 items-start mb-3">
+                <img src={item.user.picturePath || userImage} alt="user avatar" width="48" height="48" className="rounded-full object-cover"/>
+                <div className="flex min-w-0 mt-1 items-center gap-x-3 justify-between grow">
+                  <p className="font-medium truncate min-w-0 text-sm">{ item.user.firstName || '' } { item.user.lastName || '' }</p>
+                  <p className="text-xs text-gray-500">{ format(new Date(item.createdAt), 'MM.dd.yyyy HH:mm') }</p>
+                </div>
+              </div>
+              { item.content }
+            </div>) }
 
           </div>
           <div className="col-span-3">
@@ -87,7 +100,7 @@ const UsersLayout = memo(() => {
           </div>
         </div>
       </div>
-    </main>;
+    </main>
   </>;
 
 

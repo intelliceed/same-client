@@ -15,7 +15,7 @@ const Navbar = memo(() => {
   const { logout } = useControllerActions();
 
 
-  return <nav className="bg-blue-300 p-4 fixed top-0 w-full">
+  return <nav className="bg-blue-300 p-4 fixed top-0 w-full h-[80px] z-10">
     <div className="container mx-auto flex justify-between items-center gap-x-2">
       <div className="flex items-center gap-x-2 min-w-max">
         <img src={logo} alt="samefame" width="30" height="30" className=""/>

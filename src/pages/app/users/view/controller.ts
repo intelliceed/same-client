@@ -24,16 +24,27 @@ interface User {
   viewedProfile?: number | null;
 }
 
+interface Post {
+  user: User,
+  _id: string,
+  content: string,
+  createdAt: string,
+  picturePath?: string,
+  forSubscribers: boolean,
+}
+
 export interface State {
   disabled: boolean,
   data: User | null,
   error: string | null,
   initialized: boolean,
+  postsList: Array<Post>
 }
 
 const initialState: State = {
   data: null,
   error: null,
+  postsList: [],
   disabled: false,
   initialized: false,
 };
@@ -104,7 +115,8 @@ export function * sagaWatcher () {
 function * initializeSaga ({ payload }:{payload:{id:string}}) {
   try {
     const { data }:{data:User} = yield call(API.get, `/users/${payload.id}`,);
-    yield put(update({ data }));
+    const { data: postsList }:{data:Array<Post>} = yield call(API.get, `/users/${payload.id}/posts`,);
+    yield put(update({ data, postsList }));
   } catch (error) {
     yield put(update({ error: getErrorMessage(error), initialized: true }));
     return;
@@ -124,6 +136,8 @@ function * toggleFollowSaga () {
       yield put(update({ data }));
       throw error;
     }
+    const { data: postsList }:{data: Array<Post>} = yield call(API.get, `/users/${data._id}/posts`,);
+    yield put(update({ postsList }));
   } catch (error) {
     yield call(toast.error, getErrorMessage(error));
   }

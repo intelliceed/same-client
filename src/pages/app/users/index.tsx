@@ -23,7 +23,7 @@ const UsersLayout = memo(() => {
 
   return <>
     <main className="w-full min-h-screen bg-gray-100">
-      <div className="container mx-auto flex w-full min-h-screen flex-col pt-[64px] bg-gray-100">
+      <div className="container mx-auto flex w-full min-h-screen flex-col pt-[80px] bg-gray-100">
         <div className="pt-6 flex flex-col gap-y-4">
           { !data?.length ? <h3>There are no users created yet</h3> : <>
             <h3 className="text-lg font-medium">Users to follow</h3>
