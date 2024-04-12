@@ -153,6 +153,7 @@ export function * getSelfSaga () {
     const data: Self = yield call(API.get, '/auth/me',);
     yield put(update({ self: data, }));
   } catch (error) {
+    yield call(logoutSaga);
     console.info(getErrorMessage(error));
   }
 }

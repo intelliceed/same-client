@@ -65,7 +65,7 @@ const ConnectedRouter = ({ history, basename, children }:ConnectedRouterProps) =
 function RequireAuth ({ children }:PropsWithChildren) {
   const location = useLocation();
 
-  if (!AuthService.isTokenExist()) { return <Navigate to="/auth/login" state={{ from: location }} replace />; }
+  if (!AuthService.isTokenExist()) { return <Navigate to="/" state={{ from: location }} replace />; }
 
   return children;
 }
