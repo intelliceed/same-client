@@ -7,6 +7,7 @@ import { ArrowLeftIcon, } from '@heroicons/react/24/solid';
 import { BriefcaseIcon, CursorArrowRaysIcon, EyeIcon, MapPinIcon } from '@heroicons/react/24/outline';
 
 // local dependencies
+import config from '@/constants/config.ts';
 import { useController } from './controller.ts';
 import { Spinner } from '@/components/spinner.tsx';
 import { PageLoader } from '@/components/page-loader.tsx';
@@ -87,7 +88,10 @@ const UsersLayout = memo(() => {
                   <p className="text-xs text-gray-500">{ format(new Date(item.createdAt), 'MM.dd.yyyy HH:mm') }</p>
                 </div>
               </div>
-              { item.content }
+              <p className="mb-3">{ item.content }</p>
+              { !item.picturePath ? null : <div>
+                <img src={`${config('API_URL', '')}/${item.picturePath}`} alt="post image" width="300" height="400" className="rounded max-h-[400px] max-w-[300px]"/>
+              </div> }
             </div>) }
 
           </div>

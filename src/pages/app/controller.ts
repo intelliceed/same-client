@@ -28,6 +28,7 @@ export interface State {
   postContent: string,
   error: string | null,
   initialized: boolean,
+  postImage: File | null,
   postsList: Array<Post>,
   forSubscribers: boolean,
 }
@@ -35,6 +36,7 @@ export interface State {
 const initialState: State = {
   error: null,
   postsList: [],
+  postImage: null,
   disabled: false,
   postContent: '',
   initialized: false,
@@ -121,12 +123,21 @@ function * initializeSaga () {
   yield put(update({ initialized: true, }));
 }
 
+const prepareFormData = (payload:{postImage: File | null, postContent: string, forSubscribers: boolean}) => {
+  const formData = new FormData();
+  formData.append('content', payload.postContent);
+  formData.append('forSubscribers', String(payload.forSubscribers));
+  if (!payload.postImage) { return formData; }
+  formData.append('file', payload.postImage,);
+  return formData;
+};
+
 function * postSaga () {
   yield put(update({ disabled: true }));
   try {
-    const { postContent, forSubscribers, postsList }:State = yield select(selector);
-    const { data }:{data:Post} = yield call(API.post, '/posts', { content: postContent, forSubscribers });
-    yield put(update({ postsList: [data, ...postsList], postContent: '' }));
+    const { postContent, forSubscribers, postsList, postImage }:State = yield select(selector);
+    const { data }:{data:Post} = yield call(API.post, '/posts', prepareFormData({ postContent, forSubscribers, postImage }), { headers: { 'Content-Type': 'multipart/form-data', }, });
+    yield put(update({ postsList: [data, ...postsList], postContent: '', postImage: null }));
     yield call(toast.success, 'New post were created');
   } catch (error) {
     yield call(toast.error, getErrorMessage(error));
