@@ -1,8 +1,11 @@
 // outsource dependencies
 import * as yup from 'yup';
-import { Form, Formik } from 'formik';
+import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 import { memo, useCallback, useMemo } from 'react';
+import { Form, Formik, useFormikContext } from 'formik';
+import { FileRejection, useDropzone } from 'react-dropzone';
+import { ArrowUpTrayIcon, PhotoIcon } from '@heroicons/react/24/outline';
 
 // local dependencies
 import { FInput } from '@/components/form/input.tsx';
@@ -10,12 +13,14 @@ import { SubmitPayload, useController, useControllerState } from './controller.t
 
 // assets
 import logo from '@/assets/logo.svg';
+import userImage from '@/assets/user.png';
 import signUpImage from '@/assets/sign-up.png';
 
 // configure
 const initialValues = {
   email: '',
   password: '',
+  avatar: null,
   lastName: '',
   firstName: '',
   occupation: '',
@@ -80,8 +85,61 @@ export default SignUp;
 
 const SignUpForm = memo(() => {
   const { disabled } = useControllerState();
+  const { setFieldValue, values } = useFormikContext<SubmitPayload>();
+
+  const banner = useMemo(() => !values.avatar ? null : URL.createObjectURL(values.avatar), [values.avatar]);
+
+  const onDrop = useCallback(async (accepted:Array<File>, rejected:Array<FileRejection>) => {
+    if (!rejected?.length) {
+      await setFieldValue('avatar', accepted[0]);
+    } else {
+      const getErrorMessage = (rejected: Array<FileRejection>) => {
+        return rejected.map(({ file, errors }) => {
+          switch (errors[0].code) {
+            case 'file-invalid-type':
+              return `File has type ${file.type} which is not supported"`;
+            case 'file-too-large':
+              return 'File is too large';
+            default:
+              return errors[0].message;
+          }
+        }).join(', ');
+      };
+      toast.error(getErrorMessage(rejected));
+    }
+  }, [setFieldValue]);
+
+  const { getRootProps, getInputProps } = useDropzone({
+    onDrop,
+    disabled,
+    maxFiles: 1,
+    maxSize: 1024 * 1024 * 15,
+    accept: {
+      'image/png': ['.png'],
+      'image/jpeg': ['.jpg', '.jpeg']
+    },
+    validator: file => {
+      const condition = /(\.jpg|\.jpeg|\.png)$/i;
+      if (!condition.test(file.name)) { return { message: 'ERROR', code: 'file-invalid-type', }; }
+      return null;
+    }
+  });
 
   return <Form>
+    <div className="flex justify-center items-center">
+      <div className="relative group">
+        <div className="w-[120px] h-[120px] rounded-full overflow-hidden flex items-center justify-center relative border border-grey-400">
+          <img src={banner || userImage} alt="profile image" width="130" height="130" className="h-full w-auto object-cover"/>
+          <button type="button" disabled={disabled} className="absolute top-0 left-0 flex justify-center items-center w-full h-full opacity-0 group-hover:opacity-100 transition bg-black/50" {...getRootProps()}>
+            <ArrowUpTrayIcon className="w-10 h-10 text-white"/>
+          </button>
+        </div>
+        <button type="button" disabled={disabled} className="absolute mb-2 mr-2 bottom-0 right-0 flex justify-center items-center !p-1 btn-primary !rounded-full" {...getRootProps()}>
+          <PhotoIcon className="w-5 h-5 text-white"/>
+        </button>
+      </div>
+      <input name="userImageUpload" id="userImageUpload-file-input" {...getInputProps()} />
+    </div>
     <FInput name="firstName" type="text" label="First name" disabled={disabled} classNameLabel="text-sm font-medium" classNameFormGroup="mb-3" placeholder="First name"/>
     <FInput name="lastName" type="text" label="Last name" disabled={disabled} classNameLabel="text-sm font-medium" classNameFormGroup="mb-3" placeholder="Last name"/>
     <FInput name="email" type="email" label="Email" disabled={disabled} classNameLabel="text-sm font-medium" classNameFormGroup="mb-3" placeholder="example@example.com"/>

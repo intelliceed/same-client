@@ -85,7 +85,7 @@ const ResetPasswordForm = memo(() => {
       classNameLabel="text-sm font-medium"
     />
     <div className="flex justify-between md:gap-x-2 max-md:gap-y-4 max-md:flex-col md:items-start">
-      <p className="max-md:order-2">Create new password for you account</p>
+      <p className="max-md:order-2">Create new password for your account</p>
       <button disabled={disabled} type="submit" className="btn-primary max-md:order-1">Send</button>
     </div>
   </Form>;

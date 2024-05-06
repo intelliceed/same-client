@@ -30,6 +30,7 @@ export type SubmitPayload = {
   lastName: string,
   firstName: string,
   occupation: string,
+  avatar: File | null,
   confirmPassword: string,
 }
 
@@ -99,10 +100,22 @@ function * initializeSaga () {
   yield put(update({ initialized: true, }));
 }
 
+const prepareFormData = (payload:SubmitPayload) => {
+  const formData = new FormData();
+  formData.append('email', payload.email);
+  formData.append('password', payload.password);
+  formData.append('lastName', payload.lastName);
+  formData.append('firstName', payload.firstName);
+  formData.append('occupation', payload.occupation);
+  if (!payload.avatar) { return formData; }
+  formData.append('file', payload.avatar);
+  return formData;
+};
+
 function * submitSaga ({ payload }:{payload: SubmitPayload}) {
   yield put(update({ disabled: true, }));
   try {
-    yield call(PUB.post, '/auth/register', payload);
+    yield call(PUB.post, '/auth/register', prepareFormData(payload), { headers: { 'Content-Type': 'multipart/form-data', }, });
     yield call(toast.success, 'You have been successfully registered. You can login now.');
     yield call(history.replace, '/auth/login');
   } catch (error) {

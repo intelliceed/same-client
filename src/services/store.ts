@@ -26,8 +26,8 @@ export const makeStore = () => {
       thunk: false,
       serializableCheck: {
         // NOTE Ignore these action types because of file input that has to be put in FormData or smth else
-        ignoredPaths: [],
-        ignoredActions: ['app/main/update'],
+        ignoredPaths: ['root.app.main.postImage'],
+        ignoredActions: ['app/main/update', 'auth/sign-up/submit'],
       }, })
       .concat(sagaMiddleware),
     devTools: {

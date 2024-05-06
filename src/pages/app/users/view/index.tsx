@@ -38,7 +38,7 @@ const UsersLayout = memo(() => {
           <div className="col-span-3 ">
             <div className="p-4 bg-white rounded-lg shadow sticky top-[104px]">
               <div className="flex gap-x-2 items-start mb-3">
-                <img src={data?.picturePath || userImage} alt="user avatar" width="48" height="48" className="rounded-full object-cover"/>
+                <img src={!data?.picturePath ? userImage : `${config('API_URL', '')}/${data?.picturePath}`} alt="user avatar" width="48" height="48" className="w-12 h-12 rounded-full object-cover"/>
                 <div className="flex min-w-0 mt-1 items-center gap-x-3 justify-between grow">
                   <h2 className="font-semibold truncate min-w-0">{ data?.firstName || '' } { data?.lastName || '' }</h2>
                 </div>
@@ -82,7 +82,7 @@ const UsersLayout = memo(() => {
           <div className="col-span-6">
             { !postsList.length ? <div className="p-4 bg-white rounded-lg shadow mb-4"><p className="font-medium">There are no posts. The user can post only for subscribers, so try to follow</p></div> : postsList.map(item => <div key={item._id} className="p-4 bg-white rounded-lg shadow mb-4">
               <div className="flex gap-x-2 items-start mb-3">
-                <img src={item.user.picturePath || userImage} alt="user avatar" width="48" height="48" className="rounded-full object-cover"/>
+                <img src={!item.user.picturePath ? userImage : `${config('API_URL', '')}/${item.user.picturePath}`} alt="user avatar" width="48" height="48" className="w-12 h-12 rounded-full object-cover"/>
                 <div className="flex min-w-0 mt-1 items-center gap-x-3 justify-between grow">
                   <p className="font-medium truncate min-w-0 text-sm">{ item.user.firstName || '' } { item.user.lastName || '' }</p>
                   <p className="text-xs text-gray-500">{ format(new Date(item.createdAt), 'MM.dd.yyyy HH:mm') }</p>

@@ -6,6 +6,7 @@ import { memo, useEffect } from 'react';
 import { ArrowRightIcon, CheckBadgeIcon, XCircleIcon } from '@heroicons/react/24/solid';
 
 // local dependencies
+import config from '@/constants/config.ts';
 import { useController } from './controller.ts';
 import { PageLoader } from '@/components/page-loader.tsx';
 
@@ -29,7 +30,7 @@ const UsersLayout = memo(() => {
             <h3 className="text-lg font-medium">Users to follow</h3>
             { data.map(item => <div key={item._id} className="p-4 bg-white rounded-lg shadow">
               <div key={item._id} className="flex gap-x-2 items-start mb-3">
-                <img src={item?.picturePath || userImage} alt="user avatar" width="48" height="48" className="rounded-full object-cover"/>
+                <img src={!item.picturePath ? userImage : `${config('API_URL', '')}/${item.picturePath}`} alt="user avatar" width="48" height="48" className="w-12 h-12 rounded-full object-cover"/>
                 <div className="flex min-w-0 mt-1 items-center gap-x-3 justify-between grow">
                   <h2 className="font-semibold truncate min-w-0">{ item?.firstName || '' } { item?.lastName || '' }</h2>
                   <div className={cn('flex items-center min-w-max text-sm font-medium p-1.5 rounded-md gap-x-1.5', { 'text-main bg-main/20': item.subscribed, 'text-secondary bg-secondary/20': !item.subscribed })}>

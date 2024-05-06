@@ -14,7 +14,7 @@ import usersSlice, { subscriber as usersSubscriber } from './users/controller.ts
 import usersViewSlice, { subscriber as usersViewSubscriber } from './users/view/controller.ts';
 
 // configure
-interface Post {
+export interface Post {
   _id: string,
   user: string,
   content: string,
@@ -33,6 +33,12 @@ export interface State {
   forSubscribers: boolean,
 }
 
+export type UpdatePayload = {
+  _id: string,
+  content: string,
+  forSubscribers: boolean,
+}
+
 const initialState: State = {
   error: null,
   postsList: [],
@@ -47,17 +53,21 @@ const slice = createSlice({
   name: 'app/main',
   initialState,
   reducers: {
+    /* eslint-disable @typescript-eslint/no-unused-vars */
     post () {},
     initialize () {},
     clear: () => initialState,
+    updatePost (_state, _action: {type: string, payload:UpdatePayload}) {},
+    deletePost (_state, _action: {type: string, payload:{_id:string}}) {},
     update: (state, action:{type: string, payload:Partial<State>}) => ({
       ...state,
       ...action.payload
     }),
+    /* eslint-enable no-alert */
   },
 });
 
-export const { initialize, clear, update, post } = slice.actions;
+export const { initialize, clear, update, post, updatePost, deletePost } = slice.actions;
 
 const reducer = combineReducers({
   main: slice.reducer,
@@ -74,6 +84,8 @@ interface ControllerActions {
   clear: () => void,
   initialize: () => void,
   update: (state:Partial<State>) => void,
+  deletePost: (payload:{_id:string}) => void,
+  updatePost: (payload:UpdatePayload) => void,
 }
 
 export const useControllerActions = ():ControllerActions => {
@@ -82,12 +94,16 @@ export const useControllerActions = ():ControllerActions => {
   const handlePost = useCallback(() => dispatch(post()), [dispatch]);
   const initializeCtrl = useCallback(() => dispatch(initialize()), [dispatch]);
   const updateCtrl = useCallback((payload:Partial<State>) => dispatch(update(payload)), [dispatch]);
+  const handleDeletePost = useCallback((payload:{_id:string}) => dispatch(deletePost(payload)), [dispatch]);
+  const handleUpdatePost = useCallback((payload:UpdatePayload) => dispatch(updatePost(payload)), [dispatch]);
 
   return {
     clear: clearCtrl,
     post: handlePost,
     update: updateCtrl,
     initialize: initializeCtrl,
+    updatePost: handleUpdatePost,
+    deletePost: handleDeletePost,
   };
 };
 
@@ -110,6 +126,8 @@ export function * subscriber () {
 export function * sagaWatcher () {
   yield takeEvery(post.type, postSaga);
   yield takeEvery(initialize.type, initializeSaga);
+  yield takeEvery(updatePost.type, action => updatePostSaga(action as unknown as {type: string, payload:UpdatePayload}));
+  yield takeEvery(deletePost.type, action => deletePostSaga(action as unknown as {type: string, payload:{_id:string}}));
 }
 
 function * initializeSaga () {
@@ -140,6 +158,38 @@ function * postSaga () {
     yield put(update({ postsList: [data, ...postsList], postContent: '', postImage: null }));
     yield call(toast.success, 'New post were created');
   } catch (error) {
+    yield call(toast.error, getErrorMessage(error));
+  }
+  yield put(update({ disabled: false }));
+}
+
+function * updatePostSaga ({ payload }:{payload:UpdatePayload}) {
+  yield put(update({ disabled: true }));
+  const { postsList }:State = yield select(selector);
+  const postIndex = postsList.findIndex(item => item._id === payload._id);
+  try {
+    if (postIndex === -1) { throw new Error('Unable to find post info'); }
+    yield put(update({ postsList: postsList.map((item, index) => index !== postIndex ? item : { ...item, ...payload }) }));
+    yield call(API.put, `/posts/${payload._id}`, { ...payload, _id: undefined });
+    yield call(toast.success, 'Post was updated');
+  } catch (error) {
+    yield put(update({ postsList }));
+    yield call(toast.error, getErrorMessage(error));
+  }
+  yield put(update({ disabled: false }));
+}
+
+function * deletePostSaga ({ payload }:{payload:{_id:string}}) {
+  yield put(update({ disabled: true }));
+  const { postsList }:State = yield select(selector);
+  const postIndex = postsList.findIndex(item => item._id === payload._id);
+  try {
+    if (postIndex === -1) { throw new Error('Unable to find post info'); }
+    yield put(update({ postsList: postsList.filter((_, index) => index !== postIndex) }));
+    yield call(API.delete, `/posts/${payload._id}`,);
+    yield call(toast.success, 'Post was deleted');
+  } catch (error) {
+    yield put(update({ postsList }));
     yield call(toast.error, getErrorMessage(error));
   }
   yield put(update({ disabled: false }));

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Menu, Transition } from '@headlessui/react';
 
 // local dependencies
+import config from '@/constants/config.ts';
 import { useControllerActions, useSelf } from '@/pages/controller.ts';
 
 // assets
@@ -27,7 +28,7 @@ const Navbar = memo(() => {
           <div>
             <Menu.Button className="flex min-w-0 items-center gap-x-4 rounded-md bg-black/20 px-4 py-2 text-sm font-medium text-white hover:bg-black/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75">
               <div className="truncate min-w-0">{ self?.firstName || '' } { self?.lastName || '' }</div>
-              <img src={self?.picturePath || userImage} alt="User avatar" width="32" height="32" className="rounded-full border-2 border-tertiary object-cover"/>
+              <img src={!self?.picturePath ? userImage : `${config('API_URL', '')}/${self.picturePath}`} alt="User avatar" width="32" height="32" className="w-8 h-8 rounded-full border-2 border-tertiary object-cover"/>
             </Menu.Button>
           </div>
           <Transition
